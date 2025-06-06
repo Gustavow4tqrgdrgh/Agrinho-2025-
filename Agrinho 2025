@@ -1,0 +1,127 @@
+let plants = [];
+let pests = [];
+let score = 0;
+let gameOver = false;
+
+function setup() {
+  createCanvas(400, 400);
+  frameRate(30);
+}
+
+function draw() {
+  background(200, 255, 200); // Fundo de campo verde
+
+  if (gameOver) {
+    textSize(32);
+    fill(255, 0, 0);
+    text('Game Over', 100, height / 2);
+    textSize(16);
+    fill(255);
+    text('Pontuação: ' + score, 150, height / 2 + 40);
+    noLoop(); // Para o jogo
+    return;
+  }
+
+  // Atualiza e desenha as plantas
+  for (let i = plants.length - 1; i >= 0; i--) {
+    plants[i].update();
+    plants[i].display();
+    if (plants[i].grown && !plants[i].harvested) {
+      score++;
+      plants[i].harvested = true; // Planta é colhida quando cresce
+    }
+  }
+
+  // Atualiza e desenha as pragas
+  for (let i = pests.length - 1; i >= 0; i--) {
+    pests[i].update();
+    pests[i].display();
+    if (pests[i].hits(plants[i])) {
+      gameOver = true; // Jogo acaba se a praga atingir uma planta
+    }
+  }
+
+  // Exibe a pontuação
+  fill(0);
+  textSize(16);
+  text('Pontuação: ' + score, 10, 20);
+}
+
+// Cria uma planta ao clicar no campo
+function mousePressed() {
+  if (!gameOver) {
+    plants.push(new Plant(mouseX, mouseY));
+  }
+}
+
+// Classe para as plantas
+class Plant {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = 10;
+    this.growth = 0;
+    this.grown = false;
+    this.harvested = false;
+  }
+
+  update() {
+    if (this.growth < 100) {
+      this.growth += 1;
+    } else {
+      this.grown = true;
+    }
+  }
+
+  display() {
+    if (this.grown) {
+      fill(0, 255, 0); // Cor verde quando está madura
+    } else {
+      fill(255, 255, 0); // Cor amarela enquanto cresce
+    }
+    noStroke();
+    ellipse(this.x, this.y, this.size + this.growth / 2, this.size + this.growth / 2); // Representa a planta como um círculo
+  }
+}
+
+// Classe para as pragas
+class Pest {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = 15;
+    this.speed = 2;
+  }
+
+  update() {
+    this.y += this.speed; // A praga desce na tela
+    if (this.y > height) {
+      this.y = -this.size;
+      this.x = random(width); // A praga reaparece em uma posição aleatória no topo
+    }
+  }
+
+  display() {
+    fill(255, 0, 0); // Cor vermelha para as pragas
+    noStroke();
+    ellipse(this.x, this.y, this.size); // Representa a praga como um círculo
+  }
+
+  hits(plant) {
+    let d = dist(this.x, this.y, plant.x, plant.y);
+    return d < this.size + (plant.size + plant.growth / 2) / 2;
+  }
+}
+
+// Gera pragas de tempos em tempos
+function spawnPests() {
+  if (frameCount % 60 === 0) {
+    pests.push(new Pest(random(width), -20));
+  }
+}
+
+function keyPressed() {
+  if (key === ' ') {
+    spawnPests();
+  }
+}
